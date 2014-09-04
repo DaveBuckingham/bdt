@@ -8,11 +8,16 @@ from sklearn import linear_model
 from sklearn.externals.six import StringIO
 
 VALIDATION  = True
-USE_TOY     = True
-USE_PILLOW  = True
+#VALIDATION  = False
 
-TREE_DEPTH  = 3   # only used if not VALIDATION
-MAX_DEPTH   = 10  # only used if VALIDATION
+#USE_TOY     = True
+USE_TOY     = False
+
+USE_PILLOW  = True
+#USE_PILLOW  = False
+
+TREE_DEPTH  = 1   # only used if not VALIDATION
+MAX_DEPTH   = 15  # only used if VALIDATION
 
 
 VERBOSE     = False
@@ -132,14 +137,17 @@ while (input_index < len(sys.argv)):
 ####################################################
 
     if (USE_PILLOW and USE_TOY):
-	X = np.matrix((training_pswes, training_toys)).T
+	X_train = np.matrix((training_pswes, training_toys)).T
 	X_test = np.matrix((testing_pswes, testing_toys)).T
+	X_validate = np.matrix((validation_pswes, validation_toys)).T
     elif (USE_PILLOW):
-	X = np.matrix((training_pswes)).T
+	X_train = np.matrix((training_pswes)).T
 	X_test = np.matrix((testing_pswes)).T
+	X_validate = np.matrix((validation_pswes)).T
     elif (USE_TOY):
-	X = np.matrix((training_toys)).T
+	X_train = np.matrix((training_toys)).T
 	X_test = np.matrix((testing_toys)).T
+	X_validate = np.matrix((validation_toys)).T
     else:
 	print "no independent variables!"
 	sys.exit(1)
@@ -149,23 +157,27 @@ while (input_index < len(sys.argv)):
 
 
 
+    best_model = None
     if (VALIDATION):
-	for tree_size in range(1,MAX_DEPTH):
+	best_error = 9999
+	for tree_size in range(1,MAX_DEPTH + 1):
+	    model = tree.DecisionTreeRegressor(max_depth=tree_size)
+	    model.fit(X_train, y)
+	    validation_predictions = model.predict(X_validate).T
+	    error = np.mean(abs(validation_aswes - validation_predictions))
+	    #print(tree_size, error, best_error)
+	    if (error < best_error):
+		best_model = model
+		best_error = error
 
     else:
-    clf = tree.DecisionTreeRegressor(max_depth=TREE_DEPTH)
-    clf.fit(X, y)
+	best_model = tree.DecisionTreeRegressor(max_depth=TREE_DEPTH)
+	best_model.fit(X_train, y)
 
 
-    reg = linear_model.LinearRegression()
-    reg.fit(X, y)
 
-
-    bdt_predictions = clf.predict(X_test).T
-    lin_predictions = reg.predict(X_test).T
-
-    bdt_error = abs(testing_aswes - bdt_predictions)
-    lin_error = abs(testing_aswes - lin_predictions)
+    test_predictions = best_model.predict(X_test).T
+    test_error = abs(testing_aswes - test_predictions)
 
 
 ####################################################
@@ -184,8 +196,7 @@ while (input_index < len(sys.argv)):
 	print abs(testing_aswes - lin_predictions)
 	print "mean: "
 
-    #print np.mean(bdt_error), np.mean(lin_error)
-    print np.mean(bdt_error)
+    print np.mean(test_error)
 
     if (PLOT):
 	import matplotlib.pyplot as plt
@@ -205,4 +216,4 @@ while (input_index < len(sys.argv)):
     if (EXPORT_TREE):
 	from StringIO import StringIO
 	out = StringIO()
-	out = tree.export_graphviz(clf, out_file='tree.dot')
+	out = tree.export_graphviz(best_model, out_file='tree.dot')
