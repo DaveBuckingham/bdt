@@ -24,6 +24,8 @@ VERBOSE     = False
 PLOT        = False
 EXPORT_TREE = False
 
+PRINT_SIZE  = True
+
 if (len(sys.argv) < 2):
     print "usage: draw.py <input_file>"
     sys.exit(1)
