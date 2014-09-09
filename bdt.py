@@ -161,22 +161,21 @@ while (input_index < len(sys.argv)):
     best_error = 9999
     best_size = 0
     old_size = 0
-    do_more = True
     if (VALIDATION):
 	limit = 1
-	while (do_more):
+	while (True):
 	    model = tree.DecisionTreeRegressor(max_depth=limit)
 	    limit = limit + 1
 	    model.fit(X_train, y)
 	    my_tree = model.tree_
 	    size = my_tree.node_count
 	    if (size == old_size):
-		do_more = False
+		break
             old_size = size
 	    #print dir(my_tree)
 	    validation_predictions = model.predict(X_validate).T
 	    error = np.mean(abs(validation_aswes - validation_predictions))
-	    print (size, error)
+	    #print (size, error)
 	    #print(tree_size, error, best_error)
 	    if (error < best_error):
 		best_size = size
@@ -209,7 +208,8 @@ while (input_index < len(sys.argv)):
 	print abs(testing_aswes - lin_predictions)
 	print "mean: "
 
-    print (best_size, best_error, np.mean(test_error))
+    #print (best_size, best_error, np.mean(test_error))
+    print (best_size, np.mean(test_error))
 
     if (PLOT):
 	import matplotlib.pyplot as plt
