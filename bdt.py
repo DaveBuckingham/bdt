@@ -16,13 +16,13 @@ USE_TOY     = False
 USE_PILLOW  = True
 #USE_PILLOW  = False
 
-TREE_DEPTH  = 1   # only used if not VALIDATION
+TREE_DEPTH  = 0   # only used if not VALIDATION
 MAX_DEPTH   = 15  # only used if VALIDATION
 
 
 VERBOSE     = False
 PLOT        = False
-EXPORT_TREE = False
+EXPORT_TREE = True
 
 PRINT_SIZE  = True
 
@@ -48,8 +48,6 @@ while (input_index < len(sys.argv)):
     testing_aswes = []
     testing_pswes = []
     testing_toys = []
-
-    trees = []
 
     input_file = sys.argv[input_index]
     input_index = input_index + 1
@@ -160,15 +158,28 @@ while (input_index < len(sys.argv)):
 
 
     best_model = None
+    best_error = 9999
+    best_size = 0
+    old_size = 0
+    do_more = True
     if (VALIDATION):
-	best_error = 9999
-	for tree_size in range(1,MAX_DEPTH + 1):
-	    model = tree.DecisionTreeRegressor(max_depth=tree_size)
+	limit = 1
+	while (do_more):
+	    model = tree.DecisionTreeRegressor(max_depth=limit)
+	    limit = limit + 1
 	    model.fit(X_train, y)
+	    my_tree = model.tree_
+	    size = my_tree.node_count
+	    if (size == old_size):
+		do_more = False
+            old_size = size
+	    #print dir(my_tree)
 	    validation_predictions = model.predict(X_validate).T
 	    error = np.mean(abs(validation_aswes - validation_predictions))
+	    print (size, error)
 	    #print(tree_size, error, best_error)
 	    if (error < best_error):
+		best_size = size
 		best_model = model
 		best_error = error
 
@@ -198,7 +209,7 @@ while (input_index < len(sys.argv)):
 	print abs(testing_aswes - lin_predictions)
 	print "mean: "
 
-    print np.mean(test_error)
+    print (best_size, best_error, np.mean(test_error))
 
     if (PLOT):
 	import matplotlib.pyplot as plt
